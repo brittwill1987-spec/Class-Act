@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 export async function POST(req: Request) {
+  const stripe = getStripe();
+  if (!stripe) {
+    return NextResponse.json(
+      { error: "Stripe is not configured (missing STRIPE_SECRET_KEY)." },
+      { status: 503 }
+    );
+  }
+
   try {
     const { priceId } = await req.json();
 
     if (!priceId) {
       return NextResponse.json({ error: "Missing priceId" }, { status: 400 });
     }
+
     if (!process.env.NEXTAUTH_URL) {
       return NextResponse.json({ error: "Missing NEXTAUTH_URL" }, { status: 500 });
     }
@@ -21,6 +30,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ url: session.url });
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message ?? "Checkout error" }, { status: 500 });
+    return NextResponse.json(
+      { error: e?.message ?? "Checkout error" },
+      { status: 500 }
+    );
   }
 }
